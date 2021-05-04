@@ -21,6 +21,8 @@ os_name = []
 os_v = []
 lang = []
 user_id = []
+preferred = []
+reading_plans = []
 
 
 def findzip():
@@ -85,6 +87,7 @@ def get_info(each_iter_file):
     lls2_rx = '.+synced:\s([0-9]+)/.+'
     # android_lls_rx = '\s([0-9]+)/LLS:'
     # needs further refinement ^^^
+    # android_mod_rx = '.+state\(Modified\)'
     android_mod_rx = '.+state\(Modified\):\s([0-9]+)/'
     fire_items_rx = '.+items:\s\[\{"id":"([0-9]+)/'
     anon_rx = '.+User\sis\s(anonymous)'
@@ -92,6 +95,8 @@ def get_info(each_iter_file):
     bep_android_specs_rx = 'I/DeveloperSendLogsEmail\([0-9]+\):\s(.+)$'
     bep_ios_specs_rx = '.+I/DeveloperSendLogsEmail:\s(.+)$'
     bep_appsup_rx = '.+/Library/Application Support/([0-9]+)/'
+    android_lang_rx = '.+DeviceLanguage:([\w]+)$'
+    pref_bib_rx = '.+preferredBible\?resourceId=LLS%3A([.\w]+)$'
 
     with open(each_iter_file, 'r', encoding='latin-1') as current_log:
         for line in current_log:
@@ -135,7 +140,9 @@ def get_info(each_iter_file):
                 print(user_equals2.group(1))
             elif search(f'{ios_date_time_rx}{user_sup_rx}', line):
                 user_sup = search(f'{ios_date_time_rx}{user_sup_rx}', line)
-                print(user_sup.groups())
+                # print(f'\n\niOS Sup\n\n{user_sup.groups()}')
+                add_if_new('iOS', os_name)
+                add_if_new(user_sup.group(2), user_id)
             elif search(f'{ios_date_time_rx}{lls1_rx}', line):
                 lls1 = search(f'{ios_date_time_rx}{lls1_rx}', line)
                 # print('\n\nLLS1\n\n')
@@ -154,12 +161,13 @@ def get_info(each_iter_file):
                 print('\n\nLLS ANDROID\n\n')
                 print(lls_fire.groups())
             elif search(f'{android_date_time_rx}{android_mod_rx}', line):
-                mod_fire = search(f'{android_date_time_rx}{android_mod_rx}', line)
+                mod_file = search(f'{android_date_time_rx}{android_mod_rx}', line)
                 print('\n\nMOD ANDROID\n\n')
-                print(mod_fire.groups())
+                # print(line)
+                print(mod_file.groups())
                 add_if_new('Android', os_name)
-                add_if_new(mod_fire.group(2), user_id)
-                print(user_id)
+                add_if_new(mod_file.group(2), user_id)
+                # print(user_id)
             elif search(f'{android_date_time_rx}{fire_items_rx}', line):
                 items_fire = search(f'{android_date_time_rx}{fire_items_rx}', line)
                 print('\n\nITEMS ANDROID\n\n')
@@ -170,8 +178,10 @@ def get_info(each_iter_file):
                 # print(f'PROBABLY ANDROID LLS:\n{line}')
             elif search(f'{ios_date_time_rx}{anon_rx}', line):
                 anon_user = search(f'{ios_date_time_rx}{anon_rx}', line)
-                print(f'ANON USER:\n{line}')
-                print(anon_user.groups())
+                # print(f'ANON USER:\n{line}')
+                # print(anon_user.groups())
+                add_if_new('iOS', os_name)
+                add_if_new(anon_user.group(2), user_id)
             # elif search('users', line) or search('Users', line):
                 # print(line)
             elif search(f'{android_date_time_rx}{bep_id_rx}', line):
@@ -200,16 +210,32 @@ def get_info(each_iter_file):
             elif search(f'{bep_ios_date_time_rx}{bep_appsup_rx}', line):
                 bep_appsup = search(f'{bep_ios_date_time_rx}{bep_appsup_rx}', line)
                 print(bep_appsup.groups())
-            elif 'crash detected' in line:
-                print('CRASH DETECTED \n\n')
+            elif 'crash detected' in line or 'beginning of crash' in line:
+                print('CRASH DETECTED\n\n')
                 print(line)
+            elif 'readingPlanTitle=' in line:
+                print('READING PLAN\n\n')
+                print(line)
+            elif search(f'{android_date_time_rx}{android_lang_rx}', line):
+                android_lang = search(f'{android_date_time_rx}{android_lang_rx}', line)
+                add_if_new('Android', os_name)
+                add_if_new(android_lang.group(2), lang)
+            elif search(f'{ios_date_time_rx}{pref_bib_rx}', line):
+                ios_pref_bib = search(f'{ios_date_time_rx}{pref_bib_rx}', line)
+                add_if_new('iOS', os_name)
+                add_if_new(f'LLS:{ios_pref_bib.group(2)}', preferred)
+
+
+
+
+
     if len(device) > 1:
         longest = max(device, key=len)
         for varient in device:
             if varient != longest:
                 device.remove(varient)
-    # print(device)  
-    group_sum = f'App: {app_name} {app_v} Device: {device} Os: {os_name} {os_v} Language: {lang} User ID: {user_id}'
+    # git statusprint(device)  
+    group_sum = f'OS: {os_name} {os_v}\nApp: {app_name} {app_v}\nDevice: {device}\nLanguage: {lang}\nUser ID: {user_id}\nPreferred Bible(s): {preferred}'
     # print(group_sum)
     return group_sum
 
