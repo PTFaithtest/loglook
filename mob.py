@@ -1,8 +1,8 @@
 # TO DO 
-# get rid of print statemtnets that call out which regex found this result
+# get rid of print statements that call out which regex found this result
 # Consolidate rx for iOS date time and BEP iOS date time
 # add BEP crash
-# Printing the results is a hot mess
+# Printing the results should be improved
 # Preferred Bible regex needs refinement
 # regex needs to be added for problems downloading books
 
@@ -13,6 +13,7 @@ from pathlib import Path
 from os import listdir
 from sys import exit
 
+doc_num = 0
 
 app_name = []
 app_v = []
@@ -42,8 +43,8 @@ def findzip():
             zip_list.append(file)
         else:
             continue
-    print(file_list)
-    print(zip_list)  
+    # print(file_list)
+    # print(zip_list)  
     if len(zip_list) > 1:
         print('More than one zipped file available in the loglook folder, try again after making sure that there is only one.')
         exit()
@@ -57,7 +58,7 @@ def findzip():
         return zip_file
 
 
-def unzip_iter():
+def unzip_iter(dox):
     # based on code given in https://thispointer.com/python-how-to-unzip-a-file-extract-single-multiple-or-all-files-from-a-zip-archive/
     logzip = findzip()
     with ZipFile(logzip, 'r') as zipObj:
@@ -66,8 +67,9 @@ def unzip_iter():
         for file_name in list_of_fileNames:
             if file_name.endswith('.log') or file_name.endswith('.txt'):
                 zipObj.extract(file_name)
-                print(f'\nCurrent Log: {file_name}\n')
-                tally = get_info(file_name)
+                # print(f'\nCurrent Log: {file_name}\n')
+                dox += 1
+                tally = get_info(file_name, dox)
     organize_results(tally)
 
 def add_if_new(item, item_list):
@@ -76,7 +78,7 @@ def add_if_new(item, item_list):
         return item_list
 
 
-def get_info(each_iter_file):
+def get_info(each_iter_file, dox):
     ios_date_time_rx ='([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]:[0-9][0-9][0-9])'
     bep_ios_date_time_rx = '([0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]\s[0-9][0-9]:[0-9][0-9]:[0-9][0-9]:[0-9][0-9][0-9])'
     android_date_time_rx = '([0-9][0-9]-[0-9][0-9]\s[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9][0-9][0-9]\s)'
@@ -106,11 +108,16 @@ def get_info(each_iter_file):
 
     with open(each_iter_file, 'r', encoding='latin-1') as current_log:
         detected = False
+        # line_no = 1
         for line in current_log:
+            # if line_no == 1:
+                # print(dox, line_no, line)
+            # elif line_no % 100 == 0:
+                # print(dox, line_no, line)
             if detected:
                 crash.append(line)
                 detected = False
-            if search(f'{ios_date_time_rx}{ios_launched1_rx}', line):
+            elif search(f'{ios_date_time_rx}{ios_launched1_rx}', line):
                 multi1 = search(f'{ios_date_time_rx}{ios_launched1_rx}', line) 
                 add_if_new(multi1.group(2), app_name)
                 add_if_new(multi1.group(3), app_v)
@@ -222,6 +229,8 @@ def get_info(each_iter_file):
                 add_if_new(f'LLS:{android_pref_bib2.group(1)}', preferred)
             elif search(firebase_rx, line):
                 add_if_new('Android', os_name)
+            # line_no += 1
+        
 
     if len(device) > 1:
         longest = max(device, key=len)
@@ -237,35 +246,20 @@ def get_info(each_iter_file):
     return group_sum
 
 def organize_results(log_data):
+    num = 0
+    category = [
+        '\nOs:', '\nOs version(s):', '\nApp:', '\nApp version(s):', '\nDevice:', '\nLanguage:', '\nUser ID(s):', '\nPreferred Bible(s):', '\nReading Plans:', '\nCrash(es):'
+        ]
     for log in log_data:
-        log.sort()
-    # print(log_data)
-    print(f'\nOs: ')
-    print(*log_data[0], sep = ', ') 
-    print(*log_data[1], sep = ', ')  
-    print('\nApp: ')
-    print(*log_data[2], sep = ', ')
-    print(*log_data[3], sep = ', ')
-    print('\nDevice: ')
-    print(*log_data[4], sep = ', ')
-    print('\nLanguage:')
-    print(*log_data[5], sep = ', ')
-    print('\nUser ID(s):')
-    print(*log_data[6], sep = ', ')
-    print('\nPreferred Bible(s):')
-    print(*log_data[7], sep = ', ')
-    print('\nDetected Reading Plans:')
-    print(*log_data[8], sep = ', ')
-    print(f'\n{len(crash)} Crash(es):')
-    print(*log_data[9], sep = '\n')
+        if len(log) > 0:
+            log.sort()
+            print(category[num])
+            print(*log_data[num], sep = ', ')
+        num += 1
+    print('\n')
 
 
-
-
-
-    
-
-unzip_iter()    
+unzip_iter(doc_num)    
 
 
 
