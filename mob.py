@@ -1,19 +1,17 @@
 # TO DO 
-# get rid of print statements that call out which regex found this result
 # Consolidate rx for iOS date time and BEP iOS date time
 # add BEP crash
-# Printing the results should be improved
-# Preferred Bible regex needs refinement
 # regex needs to be added for problems downloading books
+# look for indications of poor bandwidth or offline use
+# ask if user wants to search
 
 
 from zipfile import ZipFile
 from re import search
 from pathlib import Path
-from os import listdir
+from os import listdir, remove
 from sys import exit
 
-doc_num = 0
 
 app_name = []
 app_v = []
@@ -25,12 +23,7 @@ user_id = []
 preferred = []
 android_reading_plans = []
 crash = []
-
-rez = (
-        f'Os: {os_name} {os_v}\nApp: {app_name} {app_v}\nDevice: {device}\nLanguage: {lang}\nUser ID: {user_id}\n'
-        f'Preferred Bible(s): {preferred}\nDetected Reading Plans: \n{android_reading_plans}\n'
-        f'{len(crash)} Crash(es):\n{crash}'
-        ) 
+failure = []
 
 
 def findzip():
@@ -43,8 +36,6 @@ def findzip():
             zip_list.append(file)
         else:
             continue
-    # print(file_list)
-    # print(zip_list)  
     if len(zip_list) > 1:
         print('More than one zipped file available in the loglook folder, try again after making sure that there is only one.')
         exit()
@@ -54,23 +45,23 @@ def findzip():
     else:
         file_name = zip_list[0]
         zip_file = Path.home().joinpath(folder, file_name)
-        print(zip_file)
+        print(f'\nPlease be patient, this process is usually quick, but sometimes takes a while.\n\nZipped File: {file_name}\n\nLog Files:')
         return zip_file
 
 
-def unzip_iter(dox):
+def unzip_iter():
     # based on code given in https://thispointer.com/python-how-to-unzip-a-file-extract-single-multiple-or-all-files-from-a-zip-archive/
     logzip = findzip()
     with ZipFile(logzip, 'r') as zipObj:
         list_of_fileNames = zipObj.namelist()
-        print(list_of_fileNames)
         for file_name in list_of_fileNames:
             if file_name.endswith('.log') or file_name.endswith('.txt'):
+                print(file_name)
                 zipObj.extract(file_name)
-                # print(f'\nCurrent Log: {file_name}\n')
-                dox += 1
-                tally = get_info(file_name, dox)
+                tally = get_info(file_name)
     organize_results(tally)
+    print('Deleting the zipped logfile')
+    remove(logzip)
 
 def add_if_new(item, item_list):
     if item not in item_list:
@@ -78,7 +69,7 @@ def add_if_new(item, item_list):
         return item_list
 
 
-def get_info(each_iter_file, dox):
+def get_info(each_iter_file):
     ios_date_time_rx ='([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]:[0-9][0-9][0-9])'
     bep_ios_date_time_rx = '([0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]\s[0-9][0-9]:[0-9][0-9]:[0-9][0-9]:[0-9][0-9][0-9])'
     android_date_time_rx = '([0-9][0-9]-[0-9][0-9]\s[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9][0-9][0-9]\s)'
@@ -99,25 +90,20 @@ def get_info(each_iter_file, dox):
     bep_appsup_rx = '.+/Library/Application Support/([0-9]+)/'
     android_crash_rx = '.+beginning\sof\scrash$'
     ios_crash_rx = '.+Crash detected.+'
+    ios_failure_rx = '.+= True'
     android_lang_rx = '.+DeviceLanguage:([\w]+)$'
     ios_pref_bib_rx = '.+preferredBible\?resourceId=LLS%3A([.\w]+)$'
     android_pref_bib1_rx = '.+PreferredBible:LLS:([.\w]+)$'
     android_pref_bib2_rx = '.+preferredResourceId=LLS:([.\w]+)&dataTypeReference=bible'
     android_reading_plan_rx = '.+readingPlanTitle=([\s\w]+),\s.+'
     firebase_rx = '.+FirebaseInstanceId.+'
+    fatal_rx = '.+ifatal.+'
 
     with open(each_iter_file, 'r', encoding='latin-1') as current_log:
         detected = False
-        # line_no = 1
+        failed = False
         for line in current_log:
-            # if line_no == 1:
-                # print(dox, line_no, line)
-            # elif line_no % 100 == 0:
-                # print(dox, line_no, line)
-            if detected:
-                crash.append(line)
-                detected = False
-            elif search(f'{ios_date_time_rx}{ios_launched1_rx}', line):
+            if search(f'{ios_date_time_rx}{ios_launched1_rx}', line):
                 multi1 = search(f'{ios_date_time_rx}{ios_launched1_rx}', line) 
                 add_if_new(multi1.group(2), app_name)
                 add_if_new(multi1.group(3), app_v)
@@ -196,18 +182,20 @@ def get_info(each_iter_file, dox):
                 ios_bep_specs = search(f'{bep_ios_date_time_rx}{bep_ios_specs_rx}', line)
                 print(ios_bep_specs.groups())
             elif line.startswith('iP'):
-                print(line)
+                # print(line)
                 add_if_new(line, device)
             elif search(f'{bep_ios_date_time_rx}{bep_appsup_rx}', line):
                 bep_appsup = search(f'{bep_ios_date_time_rx}{bep_appsup_rx}', line)
                 print(bep_appsup.groups())
             elif search(f'{android_crash_rx}', line):
                 add_if_new('Android', os_name)
-                print(line)
-                detected = True
-            elif search(f'{ios_date_time_rx}{ios_crash_rx}', line):
+                crash.append(line)
+            elif search(f'{ios_crash_rx}', line):
                 add_if_new('iOS', os_name)
                 crash.append(line)
+            elif search(f'{ios_failure_rx}', line):
+                add_if_new('iOS', os_name)
+                failure.append(line)
             elif search(f'{android_reading_plan_rx}', line):
                 android_reading_plan = search(f'{android_reading_plan_rx}', line)
                 add_if_new(android_reading_plan.group(1), android_reading_plans)
@@ -229,7 +217,6 @@ def get_info(each_iter_file, dox):
                 add_if_new(f'LLS:{android_pref_bib2.group(1)}', preferred)
             elif search(firebase_rx, line):
                 add_if_new('Android', os_name)
-            # line_no += 1
         
 
     if len(device) > 1:
@@ -242,24 +229,27 @@ def get_info(each_iter_file, dox):
             if name != 'Fire Os':
                 os_name.remove(name)
 
-    group_sum = [os_name, os_v, app_name, app_v, device, lang, user_id, preferred, android_reading_plans, crash]   
+    group_sum = [os_name, os_v, app_name, app_v, device, lang, user_id, preferred, android_reading_plans, crash, failure]   
     return group_sum
 
 def organize_results(log_data):
     num = 0
     category = [
-        '\nOs:', '\nOs version(s):', '\nApp:', '\nApp version(s):', '\nDevice:', '\nLanguage:', '\nUser ID(s):', '\nPreferred Bible(s):', '\nReading Plans:', '\nCrash(es):'
+        '\nOs:', '\nOs version(s):', '\nApp:', '\nApp version(s):', '\nDevice:', '\nLanguage:', '\nUser ID(s):', '\nPreferred Bible(s):', '\nReading Plans:', '\nCrash(es):', '\nFailure(s):'
         ]
     for log in log_data:
         if len(log) > 0:
             log.sort()
             print(category[num])
-            print(*log_data[num], sep = ', ')
+            if num < 9:
+                print(*log_data[num], sep = ', ')
+            else:
+                print(*log_data[num], sep = '\n')
         num += 1
     print('\n')
 
 
-unzip_iter(doc_num)    
+unzip_iter()    
 
 
 
