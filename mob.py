@@ -86,7 +86,7 @@ def get_info(each_iter_file):
     anon_rx = '.+User\sis\s(anonymous)'
     bep_id_rx = '.+User:\s([0-9]+)'
     bep_android_specs_rx = 'I/DeveloperSendLogsEmail\([0-9]+\):\s(.+)$'
-    bep_ios_specs_rx = '.+I/DeveloperSendLogsEmail:\s(.+)$'
+    bep_ios_specs_rx = '.+I/DeveloperSendLogsEmail:\s.+\((.+)\)$'
     bep_appsup_rx = '.+/Library/Application Support/([0-9]+)/'
     android_crash_rx = '.+beginning\sof\scrash$'
     ios_crash_rx = '.+Crash detected.+'
@@ -131,7 +131,6 @@ def get_info(each_iter_file):
                 add_if_new(user_equals1.group(2), user_id)
             elif search(f'{user2_rx}', line):
                 user_equals2 = search(f'{user2_rx}', line)
-                print(f'\n\nENDS IN ":\n\n{line}')
                 print(user_equals2.group(1))
             elif search(f'{ios_date_time_rx}{user_sup_rx}', line):
                 user_sup = search(f'{ios_date_time_rx}{user_sup_rx}', line)
@@ -155,23 +154,17 @@ def get_info(each_iter_file):
                 add_if_new(mod_file.group(2), user_id)
             elif search(f'{android_date_time_rx}{fire_items_rx}', line):
                 items_fire = search(f'{android_date_time_rx}{fire_items_rx}', line)
-                print('\n\nITEMS ANDROID\n\n')
-                print(items_fire.groups())
             elif search(f'{ios_date_time_rx}{anon_rx}', line):
                 anon_user = search(f'{ios_date_time_rx}{anon_rx}', line)
                 add_if_new('iOS', os_name)
                 add_if_new(anon_user.group(2), user_id)
             elif search(f'{android_date_time_rx}{bep_id_rx}', line):
                 android_bep_id = search(f'{android_date_time_rx}{bep_id_rx}', line)
-                print('\n\nANDROID BEP ID\n\n')
-                print(android_bep_id.groups())
                 add_if_new('Android', os_name)
                 add_if_new('Bible Engagement Project', app_name)
                 add_if_new(android_bep_id.group(2), user_id)
             elif search(f'{bep_ios_date_time_rx}{bep_id_rx}', line):
                 ios_bep_id = search(f'{bep_ios_date_time_rx}{bep_id_rx}', line)
-                print('\n\nIOS BEP ID\n\n')
-                print(ios_bep_id.groups())
                 add_if_new('iOS', os_name)
                 add_if_new('Bible Engagement Project', app_name)
                 add_if_new(ios_bep_id.group(2), user_id)
@@ -180,13 +173,19 @@ def get_info(each_iter_file):
                 print(android_bep_specs.groups())
             elif search(f'{bep_ios_date_time_rx}{bep_ios_specs_rx}', line):
                 ios_bep_specs = search(f'{bep_ios_date_time_rx}{bep_ios_specs_rx}', line)
-                print(ios_bep_specs.groups())
+                add_if_new('iOS', os_name)
+                add_if_new('Bible Engagement Project', app_name)
+                add_if_new(ios_bep_specs.group(2), app_v)
+
             elif line.startswith('iP'):
                 # print(line)
                 add_if_new(line, device)
             elif search(f'{bep_ios_date_time_rx}{bep_appsup_rx}', line):
                 bep_appsup = search(f'{bep_ios_date_time_rx}{bep_appsup_rx}', line)
-                print(bep_appsup.groups())
+                add_if_new('iOS', os_name)
+                add_if_new(bep_appsup.group(2), user_id)
+
+
             elif search(f'{android_crash_rx}', line):
                 add_if_new('Android', os_name)
                 crash.append(line)
