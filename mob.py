@@ -31,10 +31,11 @@ def delete_prev_files(which_dir):
     # taken from https://www.techiedelight.com/delete-all-files-directory-python/
     for files in os.listdir(which_dir):
         path = os.path.join(which_dir, files)
-        try:
-            shutil.rmtree(path)
-        except OSError:
-            os.remove(path)
+        if path != os.path.join(which_dir, '.placeholder'):
+            try:
+                shutil.rmtree(path)
+            except OSError:
+                os.remove(path)
 
 
 def findzip():
