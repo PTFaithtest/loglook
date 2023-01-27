@@ -1,6 +1,6 @@
 # TO DO 
 # look for indications of poor bandwidth or offline use
-# ask if user wants to search
+# make it ossible to do repeated searches upon request
 
 
 from zipfile import ZipFile
@@ -26,6 +26,7 @@ android_reading_plans = []
 crash = []
 failure = []
 fatal = []
+
 
 def delete_prev_files(which_dir):
     # taken from https://www.techiedelight.com/delete-all-files-directory-python/
@@ -59,20 +60,51 @@ def findzip():
         return file_name
 
 
+def search_ask():
+    while True:
+            more = input('Do you want to search more? (y = "yes", n = "no")\n')
+            more = more.lower()
+            if more == 'n':
+                return None
+            elif more == 'y':
+                diy_search = input('Enter your search term.  Case sensitive searching is not currently supported.\n')
+                diy_search = diy_search.lower()
+                return diy_search
+            else:
+                print('Entry invalid.  Please try again')
+
+
+def both_searches(status, source, search_term):   
+    with ZipFile(source, 'r') as zipObj:
+        list_of_fileNames = zipObj.namelist()
+        if status:
+            for file_name in list_of_fileNames:
+                if file_name.endswith('.log') or file_name.endswith('.txt'):
+                    print(file_name)
+                    zipObj.extract(file_name)
+                    custom_search(file_name, search_term)            
+        else:
+            for file_name in list_of_fileNames:
+                if file_name.endswith('.log') or file_name.endswith('.txt'):
+                    print(file_name)
+                    zipObj.extract(file_name)
+                    tally = get_info(file_name)
+            organize_results(tally)
+
+
 def unzip_iter():
     # based on code given in https://thispointer.com/python-how-to-unzip-a-file-extract-single-multiple-or-all-files-from-a-zip-archive/
     logzip = findzip()
     zip_file = zip_folder.joinpath(logzip)
-    with ZipFile(zip_file, 'r') as zipObj:
-        list_of_fileNames = zipObj.namelist()
-        for file_name in list_of_fileNames:
-            if file_name.endswith('.log') or file_name.endswith('.txt'):
-                print(file_name)
-                zipObj.extract(file_name)
-                tally = get_info(file_name)
-    organize_results(tally)
+    searchreq = None
+    tallydone = False
+    both_searches(tallydone, zip_file, searchreq) 
+    tallydone = True
+    cust_resp = search_ask()
+    if cust_resp is not None:
+        both_searches(tallydone, zip_file, cust_resp) 
     Path(zip_file).rename(finished.joinpath(logzip))
-    print(f'Moving {logzip} to {finished}.  It will be deleted the next time this script is run.')
+    print(f'Moving {logzip} to {finished}.  It will be deleted the next time this script is run.')    
     
    
 
@@ -80,6 +112,14 @@ def add_if_new(item, item_list):
     if item not in item_list:
         item_list.append(item)
         return item_list
+
+
+def custom_search(each_iter_file, search_term):
+    with open(each_iter_file, 'r', encoding='latin-1') as current_log:
+        for line in current_log:
+            lower_line = line.lower()
+            if search(f'{search_term}', lower_line):
+                print(line)
 
 
 def get_info(each_iter_file):
@@ -113,8 +153,6 @@ def get_info(each_iter_file):
     fatal_rx = '.+fatal.+'
 
     with open(each_iter_file, 'r', encoding='latin-1') as current_log:
-        detected = False
-        failed = False
         for line in current_log:
             if search(f'{ios_date_time_rx}{ios_launched1_rx}', line):
                 multi1 = search(f'{ios_date_time_rx}{ios_launched1_rx}', line) 
@@ -228,8 +266,6 @@ def get_info(each_iter_file):
                 add_if_new(f'LLS:{android_pref_bib2.group(1)}', preferred)
             elif search(firebase_rx, line):
                 add_if_new('Android', os_name)
-        
-
     if len(device) > 1:
         longest = max(device, key=len)
         for varient in device:
@@ -239,14 +275,9 @@ def get_info(each_iter_file):
         for name in os_name:
             if name != 'Fire Os':
                 os_name.remove(name)
-
     group_sum = [os_name, os_v, app_name, app_v, device, lang, user_id, preferred, android_reading_plans, crash, failure, fatal]   
     return group_sum
-
-
-# def diy_search():
-    # This function will allow user to search for string of their choice
-        
+      
 
 def organize_results(log_data):
     num = 0
