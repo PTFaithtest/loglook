@@ -1,6 +1,7 @@
 # TO DO 
-# look for indications of poor bandwidth or offline use
-# make it ossible to do repeated searches upon request
+# make single search function (prevent duplication of same code in current "both searches" function)
+# prettify search results
+# custom search needs to escape from special characters entered by user
 
 
 from zipfile import ZipFile
@@ -60,29 +61,35 @@ def findzip():
         return file_name
 
 
-def search_ask():
-    while True:
-            more = input('Do you want to search more? (y = "yes", n = "no")\n')
-            more = more.lower()
-            if more == 'n':
-                return None
-            elif more == 'y':
-                diy_search = input('Enter your search term.  Case sensitive searching is not currently supported.\n')
-                diy_search = diy_search.lower()
-                return diy_search
-            else:
-                print('Entry invalid.  Please try again')
+def search_funct(individual, collective, which_search):
+    # trying to prevent duplication of same code in current "both searches" function
+    for individual in collective:
+        if individual.endswith('.log') or individual.endswith('.txt'):
+            print(individual)
+            zipObj.extract(individual)
+            which_search  
 
 
-def both_searches(status, source, search_term):   
+def both_searches(status, source):   
     with ZipFile(source, 'r') as zipObj:
         list_of_fileNames = zipObj.namelist()
         if status:
-            for file_name in list_of_fileNames:
-                if file_name.endswith('.log') or file_name.endswith('.txt'):
-                    print(file_name)
-                    zipObj.extract(file_name)
-                    custom_search(file_name, search_term)            
+            while True:
+                more = input('Do you want to search more? (y = "yes", n = "no")\n')
+                more = more.lower()
+                if more == 'n':
+                    return
+                elif more == 'y':
+                    diy_search = input('Enter your search term.  Case sensitive searching is not currently supported.\n')
+                    diy_search = diy_search.lower()
+                    # search_funct('file_name', list_of_fileNames, custom_search('file_name', diy_search))
+                    for file_name in list_of_fileNames:
+                        if file_name.endswith('.log') or file_name.endswith('.txt'):
+                            print(file_name)
+                            zipObj.extract(file_name)
+                            custom_search(file_name, diy_search)                     
+                else:
+                    print('Entry invalid.  Please try again')                    
         else:
             for file_name in list_of_fileNames:
                 if file_name.endswith('.log') or file_name.endswith('.txt'):
@@ -96,13 +103,13 @@ def unzip_iter():
     # based on code given in https://thispointer.com/python-how-to-unzip-a-file-extract-single-multiple-or-all-files-from-a-zip-archive/
     logzip = findzip()
     zip_file = zip_folder.joinpath(logzip)
-    searchreq = None
+    # searchreq = None
     tallydone = False
-    both_searches(tallydone, zip_file, searchreq) 
+    both_searches(tallydone, zip_file) 
     tallydone = True
-    cust_resp = search_ask()
-    if cust_resp is not None:
-        both_searches(tallydone, zip_file, cust_resp) 
+    # cust_resp = search_ask()
+    # if cust_resp is not None:
+    both_searches(tallydone, zip_file) 
     Path(zip_file).rename(finished.joinpath(logzip))
     print(f'Moving {logzip} to {finished}.  It will be deleted the next time this script is run.')    
     
@@ -123,11 +130,11 @@ def custom_search(each_iter_file, search_term):
 
 
 def get_info(each_iter_file):
-    ios_date_time_rx ='([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]:[0-9][0-9][0-9])'
+    ios_date_time_rx ='([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9])'
     bep_ios_date_time_rx = '([0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]\s[0-9][0-9]:[0-9][0-9]:[0-9][0-9]:[0-9][0-9][0-9])'
     android_date_time_rx = '([0-9][0-9]-[0-9][0-9]\s[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9][0-9][0-9]\s)'
-    ios_launched1_rx = '.+Application launched \(([\w]+)/([.\d]+)\s\(([\w]+);.+CPU\s([\w]+)\s([.\d]+).+\s([\w]+)\)\s/\s([0-9]+)\)$'
-    ios_launched2_rx = '.+Application launched \(([\w]+)/([.\d]+)\s\(([\w]+);.+CPU\s([\w]+)\s([.\d]+).+\s([\w]+)\)\s/\s([0-9]+)\s/\s(.+)\)$'
+    ios_launched1_rx = '.*Application launched \(([\w]+)/([.\d]+)\s\(([\w]+);.+CPU\s([\w]+)\s([.\d]+).+\s([\w]+)\)\s/\s([0-9]+)\)$'
+    ios_launched2_rx = '.*Application launched \(([\w]+)/([.\d]+)\s\(([\w]+);.+CPU\s([\w]+)\s([.\d]+).+\s([\w]+)\)\s/\s([0-9]+)\s/\s(.+)\)$'
     android_launched_rx = '.+Application\slaunched\s/\s([0-9]+)$'
     user1_rx = 'userId=\s?([0-9]+)&'
     user2_rx = 'UserID=([0-9]+)"'
@@ -186,7 +193,8 @@ def get_info(each_iter_file):
             elif search(f'{ios_date_time_rx}{user_sup_rx}', line):
                 user_sup = search(f'{ios_date_time_rx}{user_sup_rx}', line)
                 add_if_new('iOS', os_name)
-                add_if_new(user_sup.group(2), user_id)
+                if user_sup.group(2) != '0':
+                    add_if_new(user_sup.group(2), user_id)
             elif search(f'{ios_date_time_rx}{lls1_rx}', line):
                 lls1 = search(f'{ios_date_time_rx}{lls1_rx}', line)
                 add_if_new('iOS', os_name)
