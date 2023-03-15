@@ -1,7 +1,7 @@
 # TO DO 
 # make single search function (prevent duplication of same code in current "both searches" function)
+# enable case sensitive searching
 # prettify search results
-# custom search needs to escape from special characters entered by user
 
 
 from zipfile import ZipFile
@@ -61,15 +61,6 @@ def findzip():
         return file_name
 
 
-def search_funct(individual, collective, which_search):
-    # trying to prevent duplication of same code in current "both searches" function
-    for individual in collective:
-        if individual.endswith('.log') or individual.endswith('.txt'):
-            print(individual)
-            zipObj.extract(individual)
-            which_search  
-
-
 def both_searches(status, source):   
     with ZipFile(source, 'r') as zipObj:
         list_of_fileNames = zipObj.namelist()
@@ -80,14 +71,28 @@ def both_searches(status, source):
                 if more == 'n':
                     return
                 elif more == 'y':
-                    diy_search = input('Enter your search term.  Case sensitive searching is not currently supported.\n')
-                    diy_search = diy_search.lower()
+                    lower = True
+                    diy_search = input('Enter your search term.  For a case sensitive search, prefix cs: to the search term, without adding a space, using lower case.\n')
+                    diy_search = re.escape(diy_search)
+                    # automatically escapes any special regex included in user's request
+                    if diy_search.startswith('cs:'):
+                        lower = False
+                        diy_search = diy_search.replace('cs:', '')
+                    if lower:
+                        diy_search = diy_search.lower()
+                    print(f'Your search term: {diy_search}')
                     # search_funct('file_name', list_of_fileNames, custom_search('file_name', diy_search))
                     for file_name in list_of_fileNames:
                         if file_name.endswith('.log') or file_name.endswith('.txt'):
                             print(file_name)
                             zipObj.extract(file_name)
-                            custom_search(file_name, diy_search)                     
+                            # custom_search(file_name, diy_search) 
+                            with open(file_name, 'r', encoding='latin-1') as current_log:
+                                for line in current_log:
+                                    if lower:
+                                        line = line.lower()
+                                    if search(f'{diy_search}', line):
+                                        print(line)                    
                 else:
                     print('Entry invalid.  Please try again')                    
         else:
