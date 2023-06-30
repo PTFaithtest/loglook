@@ -1,7 +1,5 @@
 # TO DO 
 # make single search function (prevent duplication of same code in current "both searches" function)
-# enable case sensitive searching
-# prettify search results
 
 
 from zipfile import ZipFile
@@ -139,7 +137,8 @@ def get_info(each_iter_file):
     bep_ios_date_time_rx = '([0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]\s[0-9][0-9]:[0-9][0-9]:[0-9][0-9]:[0-9][0-9][0-9])'
     android_date_time_rx = '([0-9][0-9]-[0-9][0-9]\s[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9][0-9][0-9]\s)'
     ios_launched1_rx = '.*Application launched \(([\w]+)/([.\d]+)\s\(([\w]+);.+CPU\s([\w]+)\s([.\d]+).+\s([\w]+)\)\s/\s([0-9]+)\)$'
-    ios_launched2_rx = '.*Application launched \(([\w]+)/([.\d]+)\s\(([\w]+);.+CPU\s([\w]+)\s([.\d]+).+\s([\w]+)\)\s/\s([0-9]+)\s/\s(.+)\)$'
+    ios_launched2_rx = '.*Application launched \(([\w]+)/([.\d]+)\s\(([\w]+);.+CPU\s([\w]+)\s([.\d]+).+\s([\w]+)\)\s/\s(.+)\s/\s(.+)\)$'
+    # ios_launched2_rx = '.*Application launched \(([\w]+)/([.\d]+)\s\(([\w]+);.+CPU\s([\w]+)\s([.\d]+).+\s([\w]+)\)\s/\s([0-9]+)\s/\s(.+)\)$'
     android_launched_rx = '.+Application\slaunched\s/\s([0-9]+)$'
     user1_rx = 'userId=\s?([0-9]+)&'
     user2_rx = 'UserID=([0-9]+)"'
@@ -183,7 +182,10 @@ def get_info(each_iter_file):
                 add_if_new(multi2.group(5), os_name)
                 add_if_new(multi2.group(6), os_v)
                 add_if_new(multi2.group(7), lang)
-                add_if_new(multi2.group(8), user_id)
+                if multi2.group(8) == '(null)':
+                    add_if_new('anonymous', user_id)
+                else:
+                    add_if_new(multi2.group(8), user_id)
             elif search(f'{android_date_time_rx}{android_launched_rx}', line):
                 android_launched = search(f'{android_date_time_rx}{android_launched_rx}', line)
                 add_if_new('Android', os_name)
