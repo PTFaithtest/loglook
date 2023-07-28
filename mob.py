@@ -142,6 +142,7 @@ def get_info(each_iter_file):
     android_launched_rx = '.+Application\slaunched\s/\s([0-9]+)$'
     user1_rx = 'userId=\s?([0-9]+)&'
     user2_rx = 'UserID=([0-9]+)"'
+    user3_rx = '.+"userId" : ([0-9]+)'
     user_sup_rx = '.+\sSupport/Users/([0-9]+)/'
     lls1_rx = '.+items?:\s\[?\{?\s?([0-9]+)/.+'
     lls2_rx = '.+synced:\s([0-9]+)/.+'
@@ -162,6 +163,7 @@ def get_info(each_iter_file):
     android_reading_plan_rx = '.+readingPlanTitle=([\s\w]+),\s.+'
     firebase_rx = '.+FirebaseInstanceId.+'
     fatal_rx = '.+fatal.+'
+
 
     with open(each_iter_file, 'r', encoding='latin-1') as current_log:
         for line in current_log:
@@ -196,7 +198,10 @@ def get_info(each_iter_file):
                 add_if_new(user_equals1.group(2), user_id)
             elif search(f'{user2_rx}', line):
                 user_equals2 = search(f'{user2_rx}', line)
-                print(user_equals2.group(1))
+                add_if_new(user_equals2.group(1), user_id)
+            elif search(f'{user3_rx}', line):
+                user_equals3 = search(f'{user3_rx}', line)
+                add_if_new(user_equals3.group(1), user_id)
             elif search(f'{ios_date_time_rx}{user_sup_rx}', line):
                 user_sup = search(f'{ios_date_time_rx}{user_sup_rx}', line)
                 add_if_new('iOS', os_name)
