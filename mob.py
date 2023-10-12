@@ -140,6 +140,7 @@ def get_info(each_iter_file):
     ios_launched2_rx = r'.*Application launched \(([\w]+)/([.\d]+) \(([\w]+);.+CPU ([\w]+) ([.\d]+).+ ([\w]+)\) / (.+) / (.+)\)$'
     # ios_launched2_rx = r'.*Application launched \(([\w]+)/([.\d]+) \(([\w]+);.+CPU ([\w]+) ([.\d]+).+ ([\w]+)\) / ([0-9]+) / (.+)\)$'
     android_launched_rx = r'.+Application launched / ([0-9]+)$'
+    android_version_rx = r'.+/OurApp.+Version: (.+)'
     user1_rx = r'userId= ?([0-9]+)&'
     user2_rx = r'UserID=([0-9]+)"'
     user3_rx = r'.+"userId" : ([0-9]+)'
@@ -188,6 +189,9 @@ def get_info(each_iter_file):
                     add_if_new('anonymous', user_id)
                 else:
                     add_if_new(multi2.group(8), user_id)
+            elif search(f'{android_version_rx}', line):
+                android_version = search(f'{android_version_rx}', line)
+                add_if_new(android_version.group(1), app_v)
             elif search(f'{android_date_time_rx}{android_launched_rx}', line):
                 android_launched = search(f'{android_date_time_rx}{android_launched_rx}', line)
                 add_if_new('Android', os_name)
