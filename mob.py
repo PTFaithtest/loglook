@@ -25,6 +25,7 @@ android_reading_plans = []
 crash = []
 failure = []
 fatal = []
+downloaded = []
 
 
 def delete_prev_files(which_dir):
@@ -164,6 +165,8 @@ def get_info(each_iter_file):
     android_reading_plan_rx = r'.+readingPlanTitle=([ \w]+), .+'
     firebase_rx = r'.+FirebaseInstanceId.+'
     fatal_rx = r'.+fatal.+'
+    ios_local_rx = r'.+Resource (.+) is a local LogosResource'
+    android_local_rx =r'.+\[resourceId=(.+), version=(.+), local=true\]'
 
 
     with open(each_iter_file, 'r', encoding='latin-1') as current_log:
@@ -290,6 +293,12 @@ def get_info(each_iter_file):
                 add_if_new(f'LLS:{android_pref_bib2.group(1)}', preferred)
             elif search(firebase_rx, line):
                 add_if_new('Android', os_name)
+            elif search(ios_local_rx, line):
+                ios_local_res = search(ios_local_rx, line)
+                add_if_new(ios_local_res.group(1), downloaded)
+            elif search(android_local_rx, line):
+                android_local_res = search(android_local_rx, line)
+                add_if_new(android_local_res.group(1), downloaded)
     if len(device) > 1:
         longest = max(device, key=len)
         for varient in device:
@@ -299,14 +308,14 @@ def get_info(each_iter_file):
         for name in os_name:
             if name != 'Fire Os':
                 os_name.remove(name)
-    group_sum = [os_name, os_v, app_name, app_v, device, lang, user_id, preferred, android_reading_plans, crash, failure, fatal]   
+    group_sum = [os_name, os_v, app_name, app_v, device, lang, user_id, preferred, android_reading_plans, crash, failure, fatal, downloaded]   
     return group_sum
       
 
 def organize_results(log_data):
     num = 0
     category = [
-        '\nOs:', '\nOs version(s):', '\nApp:', '\nApp version(s):', '\nDevice:', '\nLanguage:', '\nUser ID(s):', '\nPreferred Bible(s):', '\nReading Plans:', '\nCrash(es):', '\nOften but not always indicates failure:', '\nFatal Error:'
+        '\nOs:', '\nOs version(s):', '\nApp:', '\nApp version(s):', '\nDevice:', '\nLanguage:', '\nUser ID(s):', '\nPreferred Bible(s):', '\nReading Plans:', '\nCrash(es):', '\nOften but not always indicates failure:', '\nFatal Error:', '\nDownloaded Books Mentioned:'
         ]
     for log in log_data:
         if len(log) > 0:
