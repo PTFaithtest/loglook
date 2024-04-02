@@ -120,6 +120,8 @@ def unzip_iter():
    
 
 def add_if_new(item, item_list):
+    if item == 'anonymous':
+        item = 'Anonymous'
     if item not in item_list:
         item_list.append(item)
         return item_list
