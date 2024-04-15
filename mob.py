@@ -169,6 +169,7 @@ def get_info(each_iter_file):
     fatal_rx = r'.+fatal.+'
     ios_local_rx = r'.+Resource (.+) is a local LogosResource'
     android_local_rx =r'.+\[resourceId=(.+), version=(.+), local=true\]'
+    android_anon_rx =r".+(Param value can't be null: id)$"
 
 
     with open(each_iter_file, 'r', encoding='latin-1') as current_log:
@@ -191,9 +192,11 @@ def get_info(each_iter_file):
                 add_if_new(multi2.group(6), os_v)
                 add_if_new(multi2.group(7), lang)
                 if multi2.group(8) == '(null)':
-                    add_if_new('anonymous', user_id)
+                    add_if_new('Anonymous', user_id)
                 else:
                     add_if_new(multi2.group(8), user_id)
+            elif search(f'{android_anon_rx}', line):
+                add_if_new('Anonymous', user_id)
             elif search(f'{android_version_rx}', line):
                 android_version = search(f'{android_version_rx}', line)
                 add_if_new(android_version.group(1), app_v)
