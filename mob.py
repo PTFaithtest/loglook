@@ -95,11 +95,17 @@ def both_searches(status, source):
                 else:
                     print('Entry invalid.  Please try again')                    
         else:
+            file_count = 0
             for file_name in list_of_fileNames:
                 if file_name.endswith('.log') or file_name.endswith('.txt'):
                     print(file_name)
                     zipObj.extract(file_name)
                     tally = get_info(file_name)
+                    file_count += 1
+            if file_count < 1:
+                print("No logs found, other files listed below:")
+                print(*list_of_fileNames, sep='\n')
+                exit()
             organize_results(tally)
 
 
@@ -169,7 +175,7 @@ def get_info(each_iter_file):
     fatal_rx = r'.+fatal.+'
     ios_local_rx = r'.+Resource (.+) is a local LogosResource'
     android_local_rx =r'.+\[resourceId=(.+), version=(.+), local=true\]'
-    android_anon_rx =r".+(Param value can't be null: id)$"
+    android_anon_rx =r".+Param value can't be null: id$"
 
 
     with open(each_iter_file, 'r', encoding='latin-1') as current_log:
