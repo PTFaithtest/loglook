@@ -222,9 +222,7 @@ def get_info(each_iter_file):
                 user_equals3 = search(f'{user3_rx}', line)
                 add_if_new(user_equals3.group(1), user_id)
             elif search(f'{user4_rx}', line):
-                print('current')
                 user_equals4 = search(f'{user4_rx}', line)
-                print(f'current user found {user_equals4.group(1)}')
                 add_if_new(user_equals4.group(1), user_id)
             elif search(f'{ios_date_time_rx}{user_sup_rx}', line):
                 user_sup = search(f'{ios_date_time_rx}{user_sup_rx}', line)
