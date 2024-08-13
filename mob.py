@@ -153,6 +153,7 @@ def get_info(each_iter_file):
     user1_rx = r'userId= ?([0-9]+)&'
     user2_rx = r'UserID=([0-9]+)"'
     user3_rx = r'.+"userId" : ([0-9]+)'
+    user4_rx = r'.+current user: ([0-9]+)'
     user_sup_rx = r'.+ Support/Users/([0-9]+)/'
     lls1_rx = r'.+items?: \[?\{? ?([0-9]+)/.+'
     lls2_rx = r'.+synced: ([0-9]+)/.+'
@@ -220,6 +221,11 @@ def get_info(each_iter_file):
             elif search(f'{user3_rx}', line):
                 user_equals3 = search(f'{user3_rx}', line)
                 add_if_new(user_equals3.group(1), user_id)
+            elif search(f'{user4_rx}', line):
+                print('current')
+                user_equals4 = search(f'{user4_rx}', line)
+                print(f'current user found {user_equals4.group(1)}')
+                add_if_new(user_equals4.group(1), user_id)
             elif search(f'{ios_date_time_rx}{user_sup_rx}', line):
                 user_sup = search(f'{ios_date_time_rx}{user_sup_rx}', line)
                 add_if_new('iOS', os_name)
