@@ -175,7 +175,8 @@ def get_info(each_iter_file):
     firebase_rx = r'.+FirebaseInstanceId.+'
     fatal_rx = r'.+fatal.+'
     ios_local_rx = r'.+Resource (.+) is a local LogosResource'
-    android_local_rx =r'.+\[resourceId=(.+), version=(.+), local=true\]'
+    android_local_rx = r'.+\[resourceId=(.+), version=(.+), local=true\]'
+    android_downloaded_rx = r'.+Download of (.+) complete, success = true, cancelled = false,'
     android_anon_rx =r".+Param value can't be null: id$"
 
 
@@ -314,6 +315,13 @@ def get_info(each_iter_file):
             elif search(android_local_rx, line):
                 android_local_res = search(android_local_rx, line)
                 add_if_new(android_local_res.group(1), downloaded)
+                add_if_new('Android', os_name)
+            elif search(android_downloaded_rx, line):
+                android_downloaded_res = search(android_downloaded_rx, line)
+                add_if_new(android_downloaded_res.group(1), downloaded)
+                add_if_new('Android', os_name)
+
+
     if len(device) > 1:
         longest = max(device, key=len)
         for varient in device:
