@@ -142,28 +142,34 @@ def custom_search(each_iter_file, search_term):
 
 
 def get_info(each_iter_file):
-    ios_date_time_rx = r'([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9])'
-    bep_ios_date_time_rx = r'([0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]:[0-9][0-9][0-9])'
-    android_date_time_rx = r'([0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9][0-9][0-9] )'
+    # ios_date_time_rx = r'([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9])'
+    # bep_ios_date_time_rx = r'([0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]:[0-9][0-9][0-9])'
+    # android_date_time_rx = r'([0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9][0-9][0-9] )'
     ios_launched1_rx = r'.*Application launched \(([\w]+)/([.\d]+) \(([\w]+);.+CPU ([\w]+) ([.\d]+).+ ([\w]+)\) / ([0-9]+)\)$'
     ios_launched2_rx = r'.*Application launched \(([\w]+)/([.\d]+) \(([\w]+);.+CPU ([\w]+) ([.\d]+).+ ([\w]+)\) / (.+) / (.+)\)$'
     # ios_launched2_rx = r'.*Application launched \(([\w]+)/([.\d]+) \(([\w]+);.+CPU ([\w]+) ([.\d]+).+ ([\w]+)\) / ([0-9]+) / (.+)\)$'
     android_launched_rx = r'.+Application launched / ([0-9]+)$'
-    android_version_rx = r'.+/OurApp.+Version: (.+)'
+    android_version_rx = r'.+/OurApp.+Version: (\S+$)'
     user1_rx = r'userId= ?([0-9]+)&'
     user2_rx = r'UserID=([0-9]+)"'
     user3_rx = r'.+"userId" : ([0-9]+)'
     user4_rx = r'.+current user: ([0-9]+)'
-    user_sup_rx = r'.+ Support/Users/([0-9]+)/'
+    user5_rx = r'.+Logos user ID: ([0-9]+)'
+    android_user_rx = r'Support Email / ([0-9]+)'
+    android_version_frag_rx = r'HelpFragment.+Version:\s+(.+)$'
+    android_model_frag_rx = r'HelpFragment.+Model:\s+(.+)$'
+    android_os_frag_rx = r'HelpFragment.+OS:\s+(.+)$'
+    android_lang_frag_rx = r'HelpFragment.+Language:\s+(.+)$'
+    user_sup_rx = r'.+/Users/([0-9]+)/'
     lls1_rx = r'.+items?: \[?\{? ?([0-9]+)/.+'
     lls2_rx = r'.+synced: ([0-9]+)/.+'
     android_mod_rx = r'.+state\(Modified\): ([0-9]+)/'
-    fire_items_rx = r'.+items: \[\{"id":"([0-9]+)/'
+    # fire_items_rx = r'.+items: \[\{"id":"([0-9]+)/'
     anon_rx = r'.+User is (anonymous)'
-    bep_id_rx = r'.+User: ([0-9]+)'
-    bep_android_specs_rx = r'I/DeveloperSendLogsEmail\([0-9]+\): (.+)$'
-    bep_ios_specs_rx = r'.+I/DeveloperSendLogsEmail: .+\((.+)\)$'
-    bep_appsup_rx = r'.+/Library/Application Support/([0-9]+)/'
+    # bep_id_rx = r'.+User: ([0-9]+)'
+    # bep_android_specs_rx = r'I/DeveloperSendLogsEmail\([0-9]+\): (.+)$'
+    # bep_ios_specs_rx = r'.+I/DeveloperSendLogsEmail: .+\((.+)\)$'
+    # bep_appsup_rx = r'.+/Library/Application Support/([0-9]+)/'
     android_crash_rx = r'.+beginning of crash$'
     ios_crash_rx = r'.+Crash detected.+'
     ios_failure_rx = r'.+= True'
@@ -182,40 +188,63 @@ def get_info(each_iter_file):
 
     with open(each_iter_file, 'r', encoding='latin-1') as current_log:
         for line in current_log:
-            if search(f'{ios_date_time_rx}{ios_launched1_rx}', line):
-                multi1 = search(f'{ios_date_time_rx}{ios_launched1_rx}', line) 
-                add_if_new(multi1.group(2), app_name)
-                add_if_new(multi1.group(3), app_v)
-                add_if_new(multi1.group(4), device)
-                add_if_new(multi1.group(5), os_name)
-                add_if_new(multi1.group(6), os_v)
-                add_if_new(multi1.group(7), lang)
-                add_if_new(multi1.group(8), user_id)
-            elif search(f'{ios_date_time_rx}{ios_launched2_rx}', line):
-                multi2 = search(f'{ios_date_time_rx}{ios_launched2_rx}', line) 
-                add_if_new(multi2.group(2), app_name)
-                add_if_new(multi2.group(3), app_v)
-                add_if_new(multi2.group(9), device)
-                add_if_new(multi2.group(5), os_name)
-                add_if_new(multi2.group(6), os_v)
-                add_if_new(multi2.group(7), lang)
-                if multi2.group(8) == '(null)':
+            if search(f'{ios_launched1_rx}', line):
+            # if search(f'{ios_date_time_rx}{ios_launched1_rx}', line):
+                multi1 = search(f'{ios_launched1_rx}', line) 
+                # multi1 = search(f'{ios_date_time_rx}{ios_launched1_rx}', line) 
+                add_if_new(multi1.group(1), app_name)
+                add_if_new(multi1.group(2), app_v)
+                add_if_new(multi1.group(3), device)
+                add_if_new(multi1.group(4), os_name)
+                add_if_new(multi1.group(5), os_v)
+                add_if_new(multi1.group(6), lang)
+                add_if_new(multi1.group(7), user_id)
+            elif search(f'{ios_launched2_rx}', line):
+            # elif search(f'{ios_date_time_rx}{ios_launched2_rx}', line):
+                multi2 = search(f'{ios_launched2_rx}', line) 
+                # multi2 = search(f'{ios_date_time_rx}{ios_launched2_rx}', line) 
+                add_if_new(multi2.group(1), app_name)
+                add_if_new(multi2.group(2), app_v)
+                add_if_new(multi2.group(8), device)
+                add_if_new(multi2.group(4), os_name)
+                add_if_new(multi2.group(5), os_v)
+                add_if_new(multi2.group(6), lang)
+                if multi2.group(7) == '(null)':
                     add_if_new('Anonymous', user_id)
                 else:
-                    add_if_new(multi2.group(8), user_id)
+                    add_if_new(multi2.group(7), user_id)
+            elif search(f'{android_user_rx}', line):
+                android_user = search(f'{android_user_rx}', line)
+                add_if_new(android_user.group(1), user_id)
+            elif search(f'{android_version_frag_rx}', line):
+                android_version_frag = search(f'{android_version_frag_rx}', line)
+                add_if_new(android_version_frag.group(1), app_v)
+            elif search(f'{android_model_frag_rx}', line):
+                android_model_frag = search(f'{android_model_frag_rx}', line)
+                add_if_new(android_model_frag.group(1), device)
+            elif search(f'{android_os_frag_rx}', line):
+                android_os_frag = search(f'{android_os_frag_rx}', line)
+                add_if_new('Android ' + android_os_frag.group(1), os_name)
+            elif search(f'{android_lang_frag_rx}', line):
+                android_lang_frag = search(f'{android_lang_frag_rx}', line)
+                add_if_new(android_lang_frag.group(1), lang)
             elif search(f'{android_anon_rx}', line):
                 add_if_new('Anonymous', user_id)
             elif search(f'{android_version_rx}', line):
                 android_version = search(f'{android_version_rx}', line)
                 add_if_new(android_version.group(1), app_v)
-            elif search(f'{android_date_time_rx}{android_launched_rx}', line):
-                android_launched = search(f'{android_date_time_rx}{android_launched_rx}', line)
+            elif search(f'{android_launched_rx}', line):
+            # elif search(f'{android_date_time_rx}{android_launched_rx}', line):
+                android_launched = search(f'{android_launched_rx}', line)
+                # android_launched = search(f'{android_date_time_rx}{android_launched_rx}', line)
                 add_if_new('Android', os_name)
-                add_if_new(android_launched.group(2), user_id)
-            elif search(f'{ios_date_time_rx}.+{user1_rx}', line):
-                user_equals1 = search(f'{ios_date_time_rx}.+{user1_rx}', line)
-                add_if_new('iOS', os_name)
-                add_if_new(user_equals1.group(2), user_id)
+                add_if_new(android_launched.group(1), user_id)
+            elif search(f'.+{user1_rx}', line):
+            # elif search(f'{ios_date_time_rx}.+{user1_rx}', line):
+                user_equals1 = search(f'.+{user1_rx}', line)
+                # user_equals1 = search(f'{ios_date_time_rx}.+{user1_rx}', line)
+                # add_if_new('iOS', os_name)
+                add_if_new(user_equals1.group(1), user_id)
             elif search(f'{user2_rx}', line):
                 user_equals2 = search(f'{user2_rx}', line)
                 add_if_new(user_equals2.group(1), user_id)
@@ -225,58 +254,73 @@ def get_info(each_iter_file):
             elif search(f'{user4_rx}', line):
                 user_equals4 = search(f'{user4_rx}', line)
                 add_if_new(user_equals4.group(1), user_id)
-            elif search(f'{ios_date_time_rx}{user_sup_rx}', line):
-                user_sup = search(f'{ios_date_time_rx}{user_sup_rx}', line)
-                add_if_new('iOS', os_name)
-                if user_sup.group(2) != '0':
-                    add_if_new(user_sup.group(2), user_id)
-            elif search(f'{ios_date_time_rx}{lls1_rx}', line):
-                lls1 = search(f'{ios_date_time_rx}{lls1_rx}', line)
-                add_if_new('iOS', os_name)
-                add_if_new(lls1.group(2), user_id)
-            elif search(f'{android_date_time_rx}{lls2_rx}', line):
-                android_lls2 = search(f'{android_date_time_rx}{lls2_rx}', line)
+            elif search(f'{user5_rx}', line):
+                user_equals5 = search(f'{user5_rx}', line)
+                add_if_new(user_equals5.group(1), user_id)    
+            elif search(f'{user_sup_rx}', line):
+            # elif search(f'{ios_date_time_rx}{user_sup_rx}', line):
+                user_sup = search(f'{user_sup_rx}', line)
+                # user_sup = search(f'{ios_date_time_rx}{user_sup_rx}', line)
+                # add_if_new('iOS', os_name)
+                if user_sup.group(1) != '0':
+                    add_if_new(user_sup.group(1), user_id)
+            elif search(f'{lls1_rx}', line):
+            # elif search(f'{ios_date_time_rx}{lls1_rx}', line):
+                # lls1 = search(f'{ios_date_time_rx}{lls1_rx}', line)
+                lls1 = search(f'{lls1_rx}', line)
+                # add_if_new('iOS', os_name)
+                add_if_new(lls1.group(1), user_id)
+            elif search(f'{lls2_rx}', line):
+            # elif search(f'{android_date_time_rx}{lls2_rx}', line):
+                android_lls2 = search(f'{lls2_rx}', line)
+                # android_lls2 = search(f'{android_date_time_rx}{lls2_rx}', line)
+                # add_if_new('Android', os_name)
+                add_if_new(android_lls2.group(1), user_id)
+            elif search(f'{lls1_rx}', line):
+            # elif search(f'{android_date_time_rx}{lls1_rx}', line):
+                lls_fire = search(f'{lls1_rx}', line)
+                # lls_fire = search(f'{android_date_time_rx}{lls1_rx}', line)
+                # add_if_new('Android', os_name)
+                add_if_new(lls_fire.group(1), user_id)
+            elif search(f'{android_mod_rx}', line):
+            # elif search(f'{android_date_time_rx}{android_mod_rx}', line):
+                # mod_file = search(f'{android_date_time_rx}{android_mod_rx}', line)
+                mod_file = search(f'{android_mod_rx}', line)
                 add_if_new('Android', os_name)
-                add_if_new(android_lls2.group(2), user_id)
-            elif search(f'{android_date_time_rx}{lls1_rx}', line):
-                lls_fire = search(f'{android_date_time_rx}{lls1_rx}', line)
-                add_if_new('Android', os_name)
-                add_if_new(lls_fire.group(2), user_id)
-            elif search(f'{android_date_time_rx}{android_mod_rx}', line):
-                mod_file = search(f'{android_date_time_rx}{android_mod_rx}', line)
-                add_if_new('Android', os_name)
-                add_if_new(mod_file.group(2), user_id)
-            elif search(f'{android_date_time_rx}{fire_items_rx}', line):
-                items_fire = search(f'{android_date_time_rx}{fire_items_rx}', line)
-            elif search(f'{ios_date_time_rx}{anon_rx}', line):
-                anon_user = search(f'{ios_date_time_rx}{anon_rx}', line)
-                add_if_new('iOS', os_name)
-                add_if_new(anon_user.group(2), user_id)
-            elif search(f'{android_date_time_rx}{bep_id_rx}', line):
-                android_bep_id = search(f'{android_date_time_rx}{bep_id_rx}', line)
-                add_if_new('Android', os_name)
-                add_if_new('Bible Engagement Project', app_name)
-                add_if_new(android_bep_id.group(2), user_id)
-            elif search(f'{bep_ios_date_time_rx}{bep_id_rx}', line):
-                ios_bep_id = search(f'{bep_ios_date_time_rx}{bep_id_rx}', line)
-                add_if_new('iOS', os_name)
-                add_if_new('Bible Engagement Project', app_name)
-                add_if_new(ios_bep_id.group(2), user_id)
-            elif search(f'{android_date_time_rx}{bep_android_specs_rx}', line):
-                android_bep_specs = search(f'{android_date_time_rx}{bep_android_specs_rx}', line)
-                print(android_bep_specs.groups())
-            elif search(f'{bep_ios_date_time_rx}{bep_ios_specs_rx}', line):
-                ios_bep_specs = search(f'{bep_ios_date_time_rx}{bep_ios_specs_rx}', line)
-                add_if_new('iOS', os_name)
-                add_if_new('Bible Engagement Project', app_name)
-                add_if_new(ios_bep_specs.group(2), app_v)
+                add_if_new(mod_file.group(1), user_id)
+            # elif search(f'{android_date_time_rx}{fire_items_rx}', line):
+                # items_fire = search(f'{android_date_time_rx}{fire_items_rx}', line)
+            elif search(f'{anon_rx}', line):
+            # elif search(f'{ios_date_time_rx}{anon_rx}', line):
+                anon_user = search(f'{anon_rx}', line)
+                # anon_user = search(f'{ios_date_time_rx}{anon_rx}', line)
+                # add_if_new('iOS', os_name)
+                add_if_new(anon_user.group(1), user_id)
+            # search(f'{android_date_time_rx}{bep_id_rx}', line):
+                # android_bep_id = search(f'{android_date_time_rx}{bep_id_rx}', line)
+                # add_if_new('Android', os_name)
+                # ('Bible Engagement Project', app_name)
+                # add_if_new(android_bep_id.group(2), user_id)
+            # elif search(f'{bep_ios_date_time_rx}{bep_id_rx}', line):
+                # ios_bep_id = search(f'{bep_ios_date_time_rx}{bep_id_rx}', line)
+                # add_if_new('iOS', os_name)
+                # ('Bible Engagement Project', app_name)
+                # add_if_new(ios_bep_id.group(2), user_id)
+            # elif search(f'{android_date_time_rx}{bep_android_specs_rx}', line):
+                # android_bep_specs = search(f'{android_date_time_rx}{bep_android_specs_rx}', line)
+                # print(android_bep_specs.groups())
+            # elif search(f'{bep_ios_date_time_rx}{bep_ios_specs_rx}', line):
+                #  = search(f'{bep_ios_date_time_rx}{bep_ios_specs_rx}', line)
+                # add_if_new('iOS', os_name)
+                # add_if_new('Bible Engagement Project', app_name)
+                # add_if_new(ios_bep_specs.group(2), app_v)
             elif line.startswith('iP'):
                 # print(line)
                 add_if_new(line, device)
-            elif search(f'{bep_ios_date_time_rx}{bep_appsup_rx}', line):
-                bep_appsup = search(f'{bep_ios_date_time_rx}{bep_appsup_rx}', line)
-                add_if_new('iOS', os_name)
-                add_if_new(bep_appsup.group(2), user_id)
+            #  search(f'{bep_ios_date_time_rx}{bep_appsup_rx}', line):
+                # bep_appsup = search(f'{bep_ios_date_time_rx}{bep_appsup_rx}', line)
+                # add_if_new('iOS', os_name)
+                # add_if_new(bep_appsup.group(2), user_id)
             elif search(f'{android_crash_rx}', line):
                 add_if_new('Android', os_name)
                 crash.append(line)
@@ -291,14 +335,18 @@ def get_info(each_iter_file):
             elif search(f'{android_reading_plan_rx}', line):
                 android_reading_plan = search(f'{android_reading_plan_rx}', line)
                 add_if_new(android_reading_plan.group(1), android_reading_plans)
-            elif search(f'{android_date_time_rx}{android_lang_rx}', line):
-                android_lang = search(f'{android_date_time_rx}{android_lang_rx}', line)
+            elif search(f'{android_lang_rx}', line):
+                # elif search(f'{android_date_time_rx}{android_lang_rx}', line):
+                # android_lang = search(f'{android_date_time_rx}{android_lang_rx}', line)
+                android_lang = search(f'{android_lang_rx}', line)
                 add_if_new('Android', os_name)
-                add_if_new(android_lang.group(2), lang)
-            elif search(f'{ios_date_time_rx}{ios_pref_bib_rx}', line):
-                ios_pref_bib = search(f'{ios_date_time_rx}{ios_pref_bib_rx}', line)
+                add_if_new(android_lang.group(1), lang)
+            elif search(f'{ios_pref_bib_rx}', line):
+            # elif search(f'{ios_date_time_rx}{ios_pref_bib_rx}', line):
+                # ios_pref_bib = search(f'{ios_date_time_rx}{ios_pref_bib_rx}', line)
+                ios_pref_bib = search(f'{ios_pref_bib_rx}', line)
                 add_if_new('iOS', os_name)
-                add_if_new(f'LLS:{ios_pref_bib.group(2)}', preferred)
+                add_if_new(f'LLS:{ios_pref_bib.group(1)}', preferred)
             elif search(f'{android_pref_bib1_rx}', line):                
                 android_pref_bib1 = search(f'{android_pref_bib1_rx}', line)
                 add_if_new('Android', os_name)
